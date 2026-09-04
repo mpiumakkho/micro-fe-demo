@@ -1,59 +1,33 @@
-# Shell
+# shell
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.4.
+The federation host. Port 4200.
 
-## Development server
+Owns the things a remote must not own:
 
-To start a local development server, run:
+- authentication, including the login form and the session pushed into
+  `@mfe-demo/platform`
+- top-level routing and the path prefix each remote is mounted under
+- the failure boundary that keeps a broken remote out of the rest of the page
 
-```bash
-ng serve
-```
+It is a `dynamic-host`: remote URLs are read from
+`public/federation.manifest.json` at runtime, never compiled in. Replacing that
+file at deploy time points the shell at different origins with no rebuild.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Running
 
 ```bash
-ng generate --help
+npm start        # http://localhost:4200, expects the remotes on 4201 and 4202
+npm run build
+npm test
 ```
 
-## Building
+Sign in as `somchai` / `demo1234` for every role, or `pranee` / `demo1234` for a
+user without access to orders.
 
-To build the project run:
+## Notes
 
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- Route guards use `canMatch`, not `canActivate`, so an unauthorised user never
+  downloads the remote bundle.
+- The `test` target points at the `esbuild` target on purpose. The federation
+  schematic replaces the `build` target, and `@angular/build:unit-test` derives
+  its options from it.

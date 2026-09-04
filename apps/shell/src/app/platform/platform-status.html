@@ -37,6 +37,29 @@
     </tbody>
   </table>
 
+  @if (errors().length > 0) {
+    <table class="errors">
+      <thead>
+        <tr>
+          <th>remote</th>
+          <th>kind</th>
+          <th>message</th>
+          <th>at</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (failure of errors(); track failure.at + failure.message) {
+          <tr>
+            <td>{{ failure.remote }}</td>
+            <td>{{ failure.kind }}</td>
+            <td class="mono">{{ failure.message }}</td>
+            <td class="mono">{{ failure.at }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+
   <p class="hint">
     A remote only appears here once you have navigated to it. If a remote's page renders but its row
     never shows up, the platform singleton was not shared and each app is holding its own state.

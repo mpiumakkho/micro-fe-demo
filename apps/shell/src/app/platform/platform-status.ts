@@ -1,5 +1,6 @@
 import { Component, computed } from '@angular/core';
 import { PLATFORM_VERSION, getPlatformLoadInfo, registeredBuilds } from '@mfe-demo/platform';
+import { remoteErrors } from '../remote/remote-errors';
 
 /**
  * The evidence panel for this demo.
@@ -16,6 +17,7 @@ import { PLATFORM_VERSION, getPlatformLoadInfo, registeredBuilds } from '@mfe-de
 })
 export class PlatformStatus {
   readonly builds = registeredBuilds;
+  readonly errors = remoteErrors;
   readonly platformVersion = PLATFORM_VERSION;
 
   /**

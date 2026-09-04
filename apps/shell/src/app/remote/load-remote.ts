@@ -1,5 +1,6 @@
 import { loadRemoteModule } from '@angular-architects/native-federation';
 import type { Routes } from '@angular/router';
+import { recordRemoteError } from './remote-errors';
 import { RemoteUnavailable } from './remote-unavailable';
 
 interface ExposedRouteModule {
@@ -32,6 +33,7 @@ export async function loadRemoteRoutes(remoteName: string): Promise<Routes> {
 
     return exposed.routes;
   } catch (error) {
+    recordRemoteError(remoteName, 'load', describe(error));
     console.error(`[shell] could not load remote "${remoteName}"`, error);
 
     return [

@@ -73,3 +73,16 @@ th {
   font-size: 0.82rem;
   color: var(--mfe-text-muted);
 }
+
+.errors {
+  margin-top: 14px;
+}
+
+.errors th,
+.errors td {
+  border-bottom-color: var(--mfe-danger);
+}
+
+.errors th {
+  color: var(--mfe-danger);
+}

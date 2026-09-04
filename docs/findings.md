@@ -327,7 +327,9 @@ accepted or designed around before committing.
    Build all apps on the new version, deploy them beside the old ones, then flip
    the shell and `federation.manifest.json` together. Rollback is flipping back.
    Old builds have to stay online through the transition, because a browser that
-   already loaded the previous shell is still holding its import map.
+   already loaded the previous shell is still holding its import map. The step by
+   step is in `docs/runbook.md`; its primitives are covered by tests, the full
+   sequence has not been rehearsed against a real deploy target.
 4. **Keep the shell thin.** Routing, auth, layout, error boundary. Its Angular
    version dictates everyone else's, and a defect in it has no failure boundary
    above it. Business features and a component library both belong in remotes or

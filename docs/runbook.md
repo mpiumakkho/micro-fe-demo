@@ -145,6 +145,73 @@ Reads the lockfiles, needs no install, and fails when two apps would ship
 different versions of a package they share. This is the check that catches the
 failure in `docs/findings.md` question 2 before it reaches a browser.
 
+## Upgrading Angular across all three apps
+
+No ordering is safe. The shell moving first breaks every remote, a remote moving
+first breaks itself, and the version that decides it is the installed one, not
+the declared range. The only safe shape is to deploy the new set beside the old
+one and switch in a single step.
+
+**Prepare**
+
+```bash
+# bump @angular/* in all three apps and packages/platform, then:
+npm run check:versions      # must pass, this is what makes the set consistent
+npm run build
+npm run test:unit
+npm run test:e2e
+```
+
+**Deploy beside the current release**
+
+Upload each remote's new build to a *new* path, leaving the live one in place:
+
+```
+/remotes/mfe-orders/2026-09-05/remoteEntry.json
+/remotes/mfe-catalog/2026-09-05/remoteEntry.json
+```
+
+Upload the new shell too, without publishing its `index.html` yet.
+
+**Switch**
+
+Publish the new shell's `index.html` and apply a manifest pointing at the new
+remote paths, together:
+
+```bash
+node deploy/apply-manifest.mjs deploy/manifests/2026-09-05.json
+```
+
+Both files are served `no-cache`, so the next page load gets the new set. A
+browser that already has the page open keeps the import map it loaded with, so
+there is never a mixed set inside one page load; skew only exists between page
+loads.
+
+**Verify**
+
+```bash
+npm run inspect:imports     # must report one instance of @angular/core
+npm run test:e2e
+```
+
+**Roll back**
+
+Re-apply the previous manifest and restore the previous shell `index.html`. No
+rebuild is involved, which is why this is the cheap direction.
+
+**Retention**
+
+Keep the previous remote builds online until every session that could still be
+holding the old import map has ended. Deleting them at switch time breaks anyone
+with the page open. Remove them on the following release instead.
+
+What is verified and what is not: flipping the manifest without a rebuild is
+covered by `e2e/tests/relocate.spec.ts`, the cache headers by
+`deploy/serve-static.mjs` and its tests, and the version alignment by
+`scripts/check-shared-versions.mjs`. The full sequence above has not been
+rehearsed end to end against a real deploy target; do that once before relying
+on it.
+
 ## Continuous integration
 
 `.github/workflows/` has one pipeline per deployable app, filtered to its own

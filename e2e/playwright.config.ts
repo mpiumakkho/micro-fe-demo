@@ -36,5 +36,26 @@ export default defineConfig({
       reuseExistingServer: true,
       timeout: 30_000,
     },
+    {
+      // The shell again, this time with a Content-Security-Policy. csp.spec.ts
+      // runs the whole flow against it so a policy that breaks federation is
+      // caught here rather than in production.
+      command:
+        'node deploy/serve-static.mjs apps/shell/dist/shell/browser 4400 http://localhost:4201 http://localhost:4202',
+      cwd: '..',
+      url: 'http://localhost:4400/',
+      reuseExistingServer: true,
+      timeout: 30_000,
+    },
+    {
+      // The same catalog build served from a second origin. relocate.spec.ts
+      // repoints the shell here through the manifest alone, which is how a
+      // remote moving to a new host is meant to work.
+      command: 'node deploy/serve-static.mjs apps/mfe-catalog/dist/mfe-catalog/browser 4302',
+      cwd: '..',
+      url: 'http://localhost:4302/remoteEntry.json',
+      reuseExistingServer: true,
+      timeout: 30_000,
+    },
   ],
 });

@@ -1,0 +1,58 @@
+name: mfe-catalog
+
+# One pipeline per deployable app. A change under apps/mfe-catalog starts this and
+# nothing else, which is what "independent deploy" has to mean in practice.
+#
+# packages/platform is listed too, and that is not incidental: it is a
+# federation singleton installed as a file: dependency, so every app has to be
+# rebuilt when it changes. The coupling is real, and the path filter is where it
+# becomes visible instead of being discovered in production.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mfe-catalog/**'
+      - 'packages/platform/**'
+      - '.github/workflows/mfe-catalog.yml'
+  pull_request:
+    paths:
+      - 'apps/mfe-catalog/**'
+      - 'packages/platform/**'
+      - '.github/workflows/mfe-catalog.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            packages/platform/package-lock.json
+            apps/mfe-catalog/package-lock.json
+
+      # The app imports the compiled output of the shared package, so it has to
+      # exist before the app is installed.
+      - name: build the shared platform package
+        run: npm ci && npm run build
+        working-directory: packages/platform
+
+      - name: install
+        run: npm ci
+        working-directory: apps/mfe-catalog
+
+      - name: unit tests
+        run: npm test
+        working-directory: apps/mfe-catalog
+
+      - name: build
+        run: npm run build
+        working-directory: apps/mfe-catalog
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mfe-catalog-dist
+          path: apps/mfe-catalog/dist/
+          retention-days: 7

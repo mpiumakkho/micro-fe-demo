@@ -1,0 +1,58 @@
+name: mfe-orders
+
+# One pipeline per deployable app. A change under apps/mfe-orders starts this and
+# nothing else, which is what "independent deploy" has to mean in practice.
+#
+# packages/platform is listed too, and that is not incidental: it is a
+# federation singleton installed as a file: dependency, so every app has to be
+# rebuilt when it changes. The coupling is real, and the path filter is where it
+# becomes visible instead of being discovered in production.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mfe-orders/**'
+      - 'packages/platform/**'
+      - '.github/workflows/mfe-orders.yml'
+  pull_request:
+    paths:
+      - 'apps/mfe-orders/**'
+      - 'packages/platform/**'
+      - '.github/workflows/mfe-orders.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            packages/platform/package-lock.json
+            apps/mfe-orders/package-lock.json
+
+      # The app imports the compiled output of the shared package, so it has to
+      # exist before the app is installed.
+      - name: build the shared platform package
+        run: npm ci && npm run build
+        working-directory: packages/platform
+
+      - name: install
+        run: npm ci
+        working-directory: apps/mfe-orders
+
+      - name: unit tests
+        run: npm test
+        working-directory: apps/mfe-orders
+
+      - name: build
+        run: npm run build
+        working-directory: apps/mfe-orders
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mfe-orders-dist
+          path: apps/mfe-orders/dist/
+          retention-days: 7

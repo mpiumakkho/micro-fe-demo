@@ -1,0 +1,31 @@
+name: platform
+
+# Only the shared package. Everything else in the repo can change without
+# starting this pipeline.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/platform/**'
+      - '.github/workflows/platform.yml'
+  pull_request:
+    paths:
+      - 'packages/platform/**'
+      - '.github/workflows/platform.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/platform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: packages/platform/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build

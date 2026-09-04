@@ -1,0 +1,61 @@
+name: e2e
+
+# The composed page cannot be verified by any single app's pipeline, so this one
+# builds all three and runs the proofs against them. It intentionally has no
+# path filter: composition can break from a change in any of them.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  proofs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            packages/platform/package-lock.json
+            apps/shell/package-lock.json
+            apps/mfe-orders/package-lock.json
+            apps/mfe-catalog/package-lock.json
+            e2e/package-lock.json
+
+      - name: build the shared platform package
+        run: npm ci && npm run build
+        working-directory: packages/platform
+
+      - name: build shell
+        run: npm ci && npm run build
+        working-directory: apps/shell
+
+      - name: build mfe-orders
+        run: npm ci && npm run build
+        working-directory: apps/mfe-orders
+
+      - name: build mfe-catalog
+        run: npm ci && npm run build
+        working-directory: apps/mfe-catalog
+
+      - name: install the proof suite
+        run: npm ci
+        working-directory: e2e
+
+      - name: install chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: e2e
+
+      # Starts the five static origins itself; see e2e/playwright.config.ts.
+      - name: run the proofs
+        run: npm test
+        working-directory: e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7

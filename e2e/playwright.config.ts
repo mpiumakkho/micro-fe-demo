@@ -37,6 +37,17 @@ export default defineConfig({
       timeout: 30_000,
     },
     {
+      // Every app behind one origin under path prefixes. single-origin.spec.ts
+      // checks that the composition still works there, with a policy that names
+      // no remote origins at all.
+      command:
+        'node deploy/serve-composed.mjs 4500 .=apps/shell/dist/shell/browser remotes/mfe-orders=apps/mfe-orders/dist/mfe-orders/browser remotes/mfe-catalog=apps/mfe-catalog/dist/mfe-catalog/browser',
+      cwd: '..',
+      url: 'http://localhost:4500/remotes/mfe-orders/remoteEntry.json',
+      reuseExistingServer: true,
+      timeout: 30_000,
+    },
+    {
       // The shell again, this time with a Content-Security-Policy. csp.spec.ts
       // runs the whole flow against it so a policy that breaks federation is
       // caught here rather than in production.

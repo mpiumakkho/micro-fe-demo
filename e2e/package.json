@@ -1,0 +1,15 @@
+{
+  "name": "@mfe-demo/e2e",
+  "version": "1.0.0",
+  "description": "Repeatable proof that the three independently built apps compose at runtime.",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "inspect:imports": "node tools/inspect-import-map.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0"
+  }
+}

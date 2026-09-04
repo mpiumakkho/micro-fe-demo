@@ -1,0 +1,37 @@
+.panel {
+  background: var(--mfe-surface);
+  border: 1px solid var(--mfe-border);
+  border-radius: var(--mfe-radius);
+  padding: 20px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+}
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 0.98rem;
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+.cta {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--mfe-border);
+}
+
+.grid {
+  margin-top: var(--mfe-gap);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--mfe-gap);
+}

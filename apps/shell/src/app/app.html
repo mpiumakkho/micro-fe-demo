@@ -1,0 +1,35 @@
+<header class="topbar">
+  <div class="brand">
+    micro-fe-demo
+    <span>shell</span>
+  </div>
+
+  <nav>
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+    @if (canSeeCatalog()) {
+      <a routerLink="/catalog" routerLinkActive="active">Catalog</a>
+    }
+    @if (canSeeOrders()) {
+      <a routerLink="/orders" routerLinkActive="active">Orders</a>
+    }
+  </nav>
+
+  <div class="session">
+    <span class="cart" title="Shared cart state, written by mfe-catalog">
+      cart {{ cartCount() }} &middot; {{ cartTotal() | number: '1.2-2' }}
+    </span>
+
+    @if (user(); as current) {
+      <span class="who">{{ current.displayName }}</span>
+      <button type="button" (click)="signOut()">Sign out</button>
+    } @else {
+      <a class="signin" routerLink="/login">Sign in</a>
+    }
+  </div>
+</header>
+
+<main>
+  <router-outlet />
+</main>
+
+<app-platform-status />

@@ -1,0 +1,75 @@
+.status {
+  margin-top: 24px;
+  background: var(--mfe-surface);
+  border: 1px solid var(--mfe-border);
+  border-radius: var(--mfe-radius);
+  padding: 16px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.badge {
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.78rem;
+  border: 1px solid var(--mfe-border);
+}
+
+.badge.good {
+  border-color: var(--mfe-ok);
+  color: var(--mfe-ok);
+}
+
+.badge.bad {
+  border-color: var(--mfe-danger);
+  color: var(--mfe-danger);
+}
+
+.badge.warn {
+  border-color: #a86a00;
+  color: #a86a00;
+}
+
+.badge.neutral {
+  color: var(--mfe-text-muted);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--mfe-border);
+}
+
+th {
+  color: var(--mfe-text-muted);
+  font-weight: 600;
+}
+
+.mono {
+  font-family: var(--mfe-mono);
+  font-size: 0.8rem;
+}
+
+.hint {
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  color: var(--mfe-text-muted);
+}

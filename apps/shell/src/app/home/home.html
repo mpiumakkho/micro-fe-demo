@@ -1,0 +1,44 @@
+<section class="panel">
+  <h1>Native Federation evaluation</h1>
+  <p>
+    Three separately built and separately deployed Angular applications, composed in the browser at
+    runtime. This page exists to answer three questions, not to look like a product.
+  </p>
+
+  @if (!isAuthenticated()) {
+    <p class="cta">
+      <a routerLink="/login">Sign in</a> to load the remotes. Navigation entries are hidden until
+      your roles allow them.
+    </p>
+  }
+</section>
+
+<section class="grid">
+  <article class="panel">
+    <h2>1. Can a remote be deployed on its own?</h2>
+    <p>
+      Rebuild and redeploy one remote, reload this page, and check the evidence table at the bottom.
+      Only that app's build id changes. The shell is never rebuilt because remote URLs are read from
+      <code>federation.manifest.json</code> at runtime, not compiled in.
+    </p>
+  </article>
+
+  <article class="panel">
+    <h2>2. Can the teams move independently?</h2>
+    <p>
+      Each app has its own <code>package.json</code>, its own lockfile and its own
+      <code>node_modules</code>. The evidence table shows the Angular version each one was built
+      against, so a deliberate version skew becomes visible instead of silent.
+    </p>
+  </article>
+
+  <article class="panel">
+    <h2>3. Is this safe for production?</h2>
+    <p>
+      Stop a remote's server and open its route: the shell keeps working and only that section shows
+      a failure. Shared session and cart state live in one
+      <code>&#64;mfe-demo/platform</code> instance; the evidence table reports if that instance was
+      ever duplicated.
+    </p>
+  </article>
+</section>

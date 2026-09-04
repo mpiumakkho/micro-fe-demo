@@ -1,0 +1,32 @@
+{
+  "name": "@mfe-demo/platform",
+  "version": "1.0.0",
+  "description": "Shared runtime platform for the shell and its remotes: auth state, cart state, and build registry. Loaded once as a federation singleton.",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@angular/core": ">=21.0.0 <22.0.0"
+  },
+  "devDependencies": {
+    "@angular/core": "^21.1.0",
+    "typescript": "~5.9.0",
+    "vitest": "^4.0.8"
+  }
+}

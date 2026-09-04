@@ -31,6 +31,10 @@ module.exports = withNativeFederation({
     'rxjs/fetch',
     'rxjs/testing',
     'rxjs/webSocket',
+    // Do not add '@angular/common/http' here even though nothing in this repo
+    // uses HttpClient. @angular/platform-browser imports it, so skipping it
+    // fails at runtime with "Unable to resolve specifier '@angular/common/http'"
+    // and the app never boots. Its ~47 kB is not removable this way.
   ],
 
   features: {

@@ -121,6 +121,30 @@ npm run measure:payload
 Reports transferred bytes by origin and the ten largest files, which is the
 number a bundle budget belongs on. `e2e/tests/payload.spec.ts` enforces it.
 
+## Serving everything from one origin
+
+The layout recommended in `docs/findings.md`: same three builds, one port, path
+prefixes instead of hosts.
+
+```bash
+npm run build
+node deploy/apply-manifest.mjs deploy/manifests/single-origin.json
+npm run serve:composed          # http://localhost:4500
+```
+
+Nothing is cross-origin, so no CORS is involved and the policy names no remote
+origins. Switch back with `deploy/manifests/local.json`.
+
+## Checking that the apps agree on shared versions
+
+```bash
+npm run check:versions
+```
+
+Reads the lockfiles, needs no install, and fails when two apps would ship
+different versions of a package they share. This is the check that catches the
+failure in `docs/findings.md` question 2 before it reaches a browser.
+
 ## Continuous integration
 
 `.github/workflows/` has one pipeline per deployable app, filtered to its own

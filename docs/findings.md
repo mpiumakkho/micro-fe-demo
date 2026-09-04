@@ -211,6 +211,30 @@ script-src 'self' blob: 'unsafe-inline' <each remote origin>
 tooling, not chosen. It is the strongest argument in this report for treating a
 federation host as a higher risk surface than an ordinary Angular app.
 
+**Serving every app from one origin removes most of the CSP problem.** Measured
+by putting the same three builds behind one port under path prefixes
+(`/`, `/remotes/mfe-orders/`, `/remotes/mfe-catalog/`) with
+`deploy/serve-composed.mjs`, and pointing the shell there with
+`deploy/manifests/single-origin.json`:
+
+| | separate origins | one origin |
+| --- | --- | --- |
+| `script-src` | `'self' blob: 'unsafe-inline'` **plus every remote origin** | `'self' blob: 'unsafe-inline'` |
+| adding a remote | edit the policy, new security review | no change |
+| CORS | required on every remote | not applicable, nothing is cross-origin |
+| Angular instances | 1 | 1 |
+| independent deploy | works | works, each prefix is its own upload target |
+
+Everything still composes: both remotes render, one Angular instance, zero CSP
+violations, and the browser contacts exactly one origin. `e2e/tests/single-origin.spec.ts`
+holds it.
+
+The isolation given up is smaller than it looks. Every remote already executes in
+the shell's JavaScript context and can reach its storage and its DOM, so separate
+origins buy almost no security boundary here while costing a policy edit per
+remote. The `'unsafe-inline'` relaxation remains either way; what changes is that
+it stops growing.
+
 **An unattributed error names no owner.** A runtime failure inside a remote used
 to reach the console as an anonymous stack trace. The shell now derives
 origin-to-remote from the import map federation injected and tags errors with
@@ -288,3 +312,23 @@ a rollback path.
 The other gaps above are ordinary engineering work with known solutions. The
 Angular version lockstep is the one architectural constraint that has to be
 accepted or designed around before committing.
+
+### If it is adopted, four rules follow from the measurements
+
+1. **Enforce the version lockstep in CI, do not agree to it.** Any app can bump
+   its own dependency, the build stays green, and the browser breaks.
+   `scripts/check-shared-versions.mjs` reads the lockfiles and fails the build
+   when two apps disagree on a package they share.
+2. **Serve every app from one origin under path prefixes.** Same independence,
+   no CORS, and a policy that does not have to be edited for each new remote.
+   Measured above.
+3. **Upgrade Angular blue/green through the manifest.** No ordering is safe: the
+   shell moving first breaks every remote, a remote moving first breaks itself.
+   Build all apps on the new version, deploy them beside the old ones, then flip
+   the shell and `federation.manifest.json` together. Rollback is flipping back.
+   Old builds have to stay online through the transition, because a browser that
+   already loaded the previous shell is still holding its import map.
+4. **Keep the shell thin.** Routing, auth, layout, error boundary. Its Angular
+   version dictates everyone else's, and a defect in it has no failure boundary
+   above it. Business features and a component library both belong in remotes or
+   in versioned libraries, not in the host.

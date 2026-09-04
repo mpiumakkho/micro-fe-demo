@@ -28,9 +28,11 @@ apps/
 packages/
   platform/       @mfe-demo/platform - shared auth, cart, build registry
 deploy/
-  serve-static.mjs   static server with the cache headers and CSP this needs
-  apply-manifest.mjs points a built shell at another environment's origins
-  manifests/         one manifest per environment
+  asset-rules.mjs    cache headers and the CSP, in one place
+  serve-static.mjs   one app on its own origin
+  serve-composed.mjs every app on one origin under path prefixes
+  apply-manifest.mjs points a built shell at another environment's remotes
+  manifests/         one manifest per environment and per layout
 e2e/              Playwright proofs, one spec per property
 .github/workflows/ one pipeline per deployable app, filtered to its own paths
 docs/             findings, decisions, runbook
@@ -66,6 +68,7 @@ up as one instance or several.
 ## Verifying the answers
 
 ```bash
+npm run check:versions    # do the apps agree on every shared package?
 npm run test:unit         # platform, shell, and both remotes
 npm run test:e2e          # the three questions, as tests
 npm run inspect:imports   # is Angular loaded once or twice?
@@ -88,7 +91,8 @@ and will not install on Node 20.19.x.
 | `@angular-architects/native-federation` | 21.2.5 |
 | Node | 20.19.6 |
 
-All three apps must install the **same** `@angular/core` build. Federation
+All three apps must install the **same** `@angular/core` build, which
+`npm run check:versions` enforces in CI. Federation
 deduplicates a shared package by its exact version string, so an app on a
 different build loads its own copy of Angular and its dependency injection stops
 working. A mismatched remote breaks only itself; a mismatched shell breaks every

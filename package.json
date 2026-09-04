@@ -16,6 +16,7 @@
     "inspect:imports": "npm --prefix e2e run inspect:imports",
     "measure:payload": "npm --prefix e2e run measure:payload",
     "apply:manifest": "node deploy/apply-manifest.mjs",
-    "check:versions": "node scripts/check-shared-versions.mjs"
+    "check:versions": "node scripts/check-shared-versions.mjs",
+    "serve:composed": "node deploy/serve-composed.mjs 4500 .=apps/shell/dist/shell/browser remotes/mfe-orders=apps/mfe-orders/dist/mfe-orders/browser remotes/mfe-catalog=apps/mfe-catalog/dist/mfe-catalog/browser"
   }
 }

@@ -1,0 +1,4 @@
+{
+  "mfe-orders": "http://localhost:4201/remoteEntry.json",
+  "mfe-catalog": "http://localhost:4202/remoteEntry.json"
+}

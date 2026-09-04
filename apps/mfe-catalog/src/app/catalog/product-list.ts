@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, PendingTasks, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { authStore, cartStore } from '@mfe-demo/platform';
 import { CatalogApi, type Product } from './catalog-api';
@@ -12,6 +12,7 @@ import { CatalogApi, type Product } from './catalog-api';
 })
 export class ProductList {
   private readonly api = inject(CatalogApi);
+  private readonly pendingTasks = inject(PendingTasks);
 
   readonly products = signal<readonly Product[]>([]);
   readonly loading = signal(true);
@@ -26,7 +27,14 @@ export class ProductList {
     void this.load();
   }
 
+  /**
+   * The load is registered as a pending task so the application is not reported
+   * as stable while it is in flight. Without this, zoneless change detection has
+   * no idea the work exists, and both server side rendering and tests would
+   * observe an empty table as a finished state.
+   */
   private async load(): Promise<void> {
+    const taskDone = this.pendingTasks.add();
     try {
       this.products.set(await this.api.list());
     } catch (cause) {
@@ -34,6 +42,7 @@ export class ProductList {
       this.error.set('Could not load products.');
     } finally {
       this.loading.set(false);
+      taskDone();
     }
   }
 

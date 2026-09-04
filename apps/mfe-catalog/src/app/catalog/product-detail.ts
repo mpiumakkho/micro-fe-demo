@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, PendingTasks, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { cartStore } from '@mfe-demo/platform';
 import { CatalogApi, type Product } from './catalog-api';
@@ -12,6 +12,7 @@ import { CatalogApi, type Product } from './catalog-api';
 })
 export class ProductDetail {
   private readonly api = inject(CatalogApi);
+  private readonly pendingTasks = inject(PendingTasks);
   private readonly route = inject(ActivatedRoute);
 
   readonly product = signal<Product | null>(null);
@@ -25,13 +26,16 @@ export class ProductDetail {
     void this.load(this.route.snapshot.paramMap.get('productId'));
   }
 
+  /** Registered as a pending task, see the note in ProductList. */
   private async load(productId: string | null): Promise<void> {
+    const taskDone = this.pendingTasks.add();
     try {
       this.product.set(productId ? await this.api.byId(productId) : null);
     } catch (cause) {
       console.error('[mfe-catalog] failed to load product', cause);
     } finally {
       this.loading.set(false);
+      taskDone();
     }
   }
 

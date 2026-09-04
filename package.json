@@ -11,8 +11,10 @@
     "serve:shell": "node deploy/serve-static.mjs apps/shell/dist/shell/browser 4200",
     "serve:orders": "node deploy/serve-static.mjs apps/mfe-orders/dist/mfe-orders/browser 4201",
     "serve:catalog": "node deploy/serve-static.mjs apps/mfe-catalog/dist/mfe-catalog/browser 4202",
-    "test:unit": "npm --prefix packages/platform test && npm --prefix apps/shell test",
+    "test:unit": "npm --prefix packages/platform test && npm --prefix apps/shell test && npm --prefix apps/mfe-orders test && npm --prefix apps/mfe-catalog test",
     "test:e2e": "npm --prefix e2e test",
-    "inspect:imports": "npm --prefix e2e run inspect:imports"
+    "inspect:imports": "npm --prefix e2e run inspect:imports",
+    "measure:payload": "npm --prefix e2e run measure:payload",
+    "apply:manifest": "node deploy/apply-manifest.mjs"
   }
 }

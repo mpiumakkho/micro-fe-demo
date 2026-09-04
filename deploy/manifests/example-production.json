@@ -1,0 +1,4 @@
+{
+  "mfe-orders": "https://orders.example.internal/remoteEntry.json",
+  "mfe-catalog": "https://catalog.example.internal/remoteEntry.json"
+}

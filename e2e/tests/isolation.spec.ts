@@ -32,6 +32,12 @@ test('a remote that is unreachable does not take the shell down', async ({ page 
   await page.getByRole('link', { name: 'Orders' }).click();
   await expect(page.getByRole('heading', { name: /temporarily unavailable/i })).toBeVisible();
 
+  // The failure is attributed to its owner rather than reaching the console as
+  // an anonymous stack trace, so whoever is on call knows which team to call.
+  const failureRow = page.locator('.errors tbody tr').filter({ hasText: 'mfe-orders' });
+  await expect(failureRow).toHaveCount(1);
+  await expect(failureRow).toContainText('load');
+
   // The shell and the healthy remote keep working.
   await page.getByRole('link', { name: 'Catalog' }).click();
   await expect(page.getByText('Served by mfe-catalog')).toBeVisible();

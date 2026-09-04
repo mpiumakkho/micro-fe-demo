@@ -1,0 +1,18 @@
+{
+  "name": "micro-fe-demo",
+  "version": "1.0.0",
+  "description": "Developer convenience scripts only. Every app under apps/ builds, tests and deploys entirely on its own; nothing here is required to build any of them.",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "build:platform": "npm --prefix packages/platform run build",
+    "build:apps": "npm --prefix apps/shell run build && npm --prefix apps/mfe-orders run build && npm --prefix apps/mfe-catalog run build",
+    "build": "npm run build:platform && npm run build:apps",
+    "serve:shell": "node deploy/serve-static.mjs apps/shell/dist/shell/browser 4200",
+    "serve:orders": "node deploy/serve-static.mjs apps/mfe-orders/dist/mfe-orders/browser 4201",
+    "serve:catalog": "node deploy/serve-static.mjs apps/mfe-catalog/dist/mfe-catalog/browser 4202",
+    "test:unit": "npm --prefix packages/platform test && npm --prefix apps/shell test",
+    "test:e2e": "npm --prefix e2e test",
+    "inspect:imports": "npm --prefix e2e run inspect:imports"
+  }
+}

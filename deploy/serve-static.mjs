@@ -3,7 +3,13 @@
  * machine. Zero dependencies on purpose - this is deployment simulation, not
  * application code.
  *
- *   node deploy/serve-static.mjs <dist-dir> <port>
+ *   node deploy/serve-static.mjs <dist-dir> <port> [allowed-origin ...]
+ *
+ * Any origins listed after the port are added to script-src and connect-src and
+ * a Content-Security-Policy is sent. Federation loads code from other origins,
+ * so those origins have to be named explicitly; without the argument no CSP is
+ * sent at all, which is the wrong default for production and is called out in
+ * docs/findings.md.
  *
  * The cache headers are the point of this file, not an afterthought:
  *
@@ -18,7 +24,7 @@ import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 
-const [distArg, portArg] = process.argv.slice(2);
+const [distArg, portArg, ...allowedOrigins] = process.argv.slice(2);
 
 if (!distArg || !portArg) {
   console.error('usage: node deploy/serve-static.mjs <dist-dir> <port>');
@@ -31,6 +37,35 @@ const port = Number.parseInt(portArg, 10);
 if (!existsSync(root)) {
   console.error(`dist directory not found: ${root}\nRun "npm run build" in that app first.`);
   process.exit(1);
+}
+
+/**
+ * Built from the origins this deployment is allowed to pull code from.
+ * style-src needs 'unsafe-inline' because Angular writes component styles into
+ * inline <style> elements; there is no nonce plumbing in a static server.
+ */
+function contentSecurityPolicy() {
+  const remotes = allowedOrigins.join(' ');
+  // Escape hatch for measuring which relaxations a stack actually needs,
+  // e.g. MFE_CSP_SCRIPT_EXTRA="'unsafe-eval'".
+  const scriptExtra = process.env.MFE_CSP_SCRIPT_EXTRA ?? '';
+  return [
+    "default-src 'self'",
+    // Measured, not chosen. blob: is required because es-module-shims runs
+    // shimmed modules from URL.createObjectURL. 'unsafe-inline' is required
+    // because the federation runtime injects the computed import map as an
+    // inline script and sets no nonce on it; es-module-shims accepts an
+    // esmsInitOptions.nonce, but nothing passes one in. 'unsafe-eval' is NOT
+    // needed. See docs/findings.md for the measurements and what this costs.
+    `script-src 'self' blob: 'unsafe-inline' ${scriptExtra} ${remotes}`.replace(/\s+/g, ' ').trim(),
+    `connect-src 'self' ${remotes}`.trim(),
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+  ].join('; ');
 }
 
 const MIME = {
@@ -91,14 +126,25 @@ createServer((request, response) => {
     return;
   }
 
-  response.writeHead(200, {
+  const headers = {
     'content-type': MIME[extname(file)] ?? 'application/octet-stream',
     'cache-control': cacheControl(pathname),
     // The shell fetches remoteEntry.json and the bundles from another origin.
     'access-control-allow-origin': '*',
-  });
+  };
+
+  if (allowedOrigins.length > 0) {
+    headers['content-security-policy'] = contentSecurityPolicy();
+  }
+
+  response.writeHead(200, headers);
 
   createReadStream(file).pipe(response);
 }).listen(port, () => {
   console.log(`serving ${root} on http://localhost:${port}`);
+  if (allowedOrigins.length > 0) {
+    console.log(`  csp: ${contentSecurityPolicy()}`);
+  } else {
+    console.log('  csp: not sent (no allowed origins given)');
+  }
 });

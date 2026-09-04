@@ -1,0 +1,97 @@
+# Runbook
+
+Verified on Windows 11, Node 20.19.6, npm 10.8.2, Angular CLI 21.1.4.
+
+## Prerequisites
+
+Node must satisfy Angular 21's engine range: `^20.19.0 || ^22.12.0 || >=24.0.0`.
+Angular 22 requires `^22.22.3 || ^24.15.0 || >=26.0.0` and will not install on Node 20.
+
+## First run
+
+The shared package must be compiled before the apps, because each app installs
+it as a `file:` dependency and imports its `dist`.
+
+```bash
+npm --prefix packages/platform install
+npm --prefix packages/platform run build
+
+npm --prefix apps/shell install
+npm --prefix apps/mfe-orders install
+npm --prefix apps/mfe-catalog install
+npm --prefix e2e install
+```
+
+## Development, all three apps live
+
+Three terminals. Each app has its own dev server; none of them needs the others
+to start.
+
+```bash
+npm --prefix apps/shell start        # http://localhost:4200
+npm --prefix apps/mfe-orders start   # http://localhost:4201
+npm --prefix apps/mfe-catalog start  # http://localhost:4202
+```
+
+Open http://localhost:4200 and sign in. Demo accounts:
+
+| Username  | Password   | Roles                                        |
+| --------- | ---------- | -------------------------------------------- |
+| `somchai` | `demo1234` | catalog.view, orders.view, orders.approve    |
+| `pranee`  | `demo1234` | catalog.view                                 |
+
+## Development, one remote on its own
+
+A remote team does not need the shell running. Each remote boots with a stubbed
+local session so the pages are usable alone:
+
+```bash
+npm --prefix apps/mfe-catalog start   # http://localhost:4202 renders the catalog directly
+```
+
+## Production-shaped run
+
+This is the arrangement the evaluation is about: three separate builds served
+from three origins with production cache headers.
+
+```bash
+npm run build          # platform, then all three apps
+
+# three terminals
+npm run serve:shell
+npm run serve:orders
+npm run serve:catalog
+```
+
+## Tests
+
+```bash
+npm run test:unit      # platform (vitest) + shell (Angular vitest builder)
+npm run test:e2e       # Playwright, needs the three builds in dist/
+```
+
+The e2e project starts the three static servers itself if they are not already
+running.
+
+## Diagnosing a duplicated shared package
+
+The failure that produces `NG0203` / `NG0200` in a composed page is two copies
+of Angular being loaded. This prints how the browser actually resolved each
+shared package:
+
+```bash
+npm run inspect:imports
+```
+
+Every scope pointing at the same file means one instance. A scope pointing at
+another origin means a second copy and broken dependency injection.
+
+## Reproducing the independent-deploy proof by hand
+
+```bash
+# note the build ids at the bottom of http://localhost:4200
+npm --prefix apps/mfe-catalog run build
+# reload: only the mfe-catalog row changed
+```
+
+The automated version of this is `e2e/tests/independent-deploy.spec.ts`.

@@ -39,65 +39,74 @@ deploy that appears to do nothing.
 
 ## 2. Can the teams move independently?
 
-**Partly. Not for the Angular version, and that is the important half.**
+**Partly. Application code yes, the Angular runtime version no.**
 
 ### What was measured
 
-Baseline: all three apps on `@angular/core@21.2.22`. Everything works.
+Three configurations of the same code, moving only `@angular/core`:
 
-Skew: `shell` moved to the Angular 21.1 toolchain (`@angular/core@21.1.6`,
-`@angular/build@21.1.5`, `@angular-architects/native-federation@21.1.1`), remotes
-left on 21.2.22. That is one minor version of drift between host and remotes.
-
-Result: **both remotes stopped rendering.**
-
-| Route | Console error | Rendered |
-| --- | --- | --- |
-| `/orders` | `NG0203` | nothing |
-| `/catalog` | `NG0200` | nothing |
-
-The cause, read out of the injected import map (`npm run inspect:imports`):
-
-```
-skewed:
-  root                          @angular/core -> ./_angular_core...js            (21.1.6, the host's)
-  scope http://localhost:4201/  @angular/core -> http://localhost:4202/...js     (21.2.22)
-  scope http://localhost:4202/  @angular/core -> http://localhost:4202/...js     (21.2.22)
-  => 2 INSTANCES
-
-aligned:
-  root                          @angular/core -> ./_angular_core.5-AGBur5af.js
-  scope http://localhost:4201/  @angular/core -> ./_angular_core.5-AGBur5af.js
-  scope http://localhost:4202/  @angular/core -> ./_angular_core.5-AGBur5af.js
-  => one instance
-```
+| shell (host) | mfe-orders | mfe-catalog | core instances | outcome |
+| --- | --- | --- | --- | --- |
+| 21.1.6 | 21.2.22 | 21.2.22 | 2 | both remotes dead: `NG0203`, `NG0200`, nothing rendered |
+| 21.2.22 | 21.2.22 | 21.1.6 | 2 | only `mfe-catalog` dead (`NG0203`); shell and `mfe-orders` unaffected |
+| 21.2.22 | 21.2.22 | 21.2.22 | 1 | works |
 
 Two copies of Angular in one page means two dependency injection systems, which
 is what `NG0203` and `NG0200` are reporting.
 
-### The part that is easy to get wrong
+### The rule
 
-The failure is decided by the **installed** version, not by the declared range.
-This was isolated by changing only the declared ranges and rebuilding:
+Native Federation deduplicates a shared package by its **exact installed version
+string**. Every app whose version matches the host uses the host's single copy;
+any app that differs loads its own.
+
+Read out of the injected import map with `npm run inspect:imports`:
+
+```
+aligned (row 3):
+  root                          @angular/core -> ./_angular_core.5-AGBur5af.js
+  scope http://localhost:4201/  @angular/core -> ./_angular_core.5-AGBur5af.js
+  scope http://localhost:4202/  @angular/core -> ./_angular_core.5-AGBur5af.js
+  => one instance
+
+mfe-catalog lagging (row 2):
+  root                          @angular/core -> ./_angular_core.5-AGBur5af.js   (21.2.22, host)
+  scope http://localhost:4201/  @angular/core -> ./_angular_core.5-AGBur5af.js   (21.2.22, host's copy)
+  scope http://localhost:4202/  @angular/core -> http://localhost:4202/...js     (21.1.6, its own)
+  => 2 INSTANCES
+```
+
+### Three things that do not decide it
+
+**Not the declared range.** Isolated by changing only the ranges and rebuilding:
 
 | `mfe-catalog` declares | `shell` declares | Installed versions | Result |
 | --- | --- | --- | --- |
-| `^21.2.0` | `21.1.6` (exact) | 21.2.22 vs 21.1.6 | 2 instances, both remotes dead |
-| `^21.1.0` | `21.1.6` (exact) | 21.2.22 vs 21.1.6 | 2 instances, both remotes dead |
-| `^21.1.0` | `^21.1.0` | 21.2.22 vs 21.1.6 | 2 instances, both remotes dead |
-| `^21.1.0` | `^21.1.0` | 21.2.22 everywhere | 1 instance, works |
+| `^21.2.0` | `21.1.6` (exact) | 21.2.22 vs 21.1.6 | 2 instances |
+| `^21.1.0` | `21.1.6` (exact) | 21.2.22 vs 21.1.6 | 2 instances |
+| `^21.1.0` | `^21.1.0` | 21.2.22 vs 21.1.6 | 2 instances |
+| `^21.1.0` | `^21.1.0` | 21.2.22 everywhere | 1 instance |
 
-Relaxing `strictVersion` or widening `requiredVersion` does not help. Native
-Federation picks the highest available version per scope, so as soon as any app
-ships a different `@angular/core` build, the remotes get their own copy.
+Relaxing `strictVersion` or widening `requiredVersion` changes nothing. In row 2
+of the first table the host's 21.2.22 satisfies the remote's `^21.1.0`, and the
+remote still loaded its own 21.1.6.
 
-Two further points worth noting:
+**Not the direction.** A remote lagging behind the host fails exactly as a remote
+running ahead of it. "Upgrade the shell first and let the remotes catch up" does
+not work.
 
-- `mfe-orders` broke even though its declared range `^21.1.0` was satisfied by
-  the host's 21.1.6. One team's drift took down a team that had not drifted.
-- `@mfe-demo/platform` stayed a single instance throughout, because all three
-  apps had the identical version of it. The rule is the same for every
-  singleton, framework or not.
+**Not the federation plugin version.** With `mfe-catalog` built on
+`@angular-architects/native-federation@21.1.1` against the shell's `21.2.5`, but
+Angular matched at 21.2.22, both remotes render and there is one instance. Only
+the Angular runtime version has to match; the plugin version may differ.
+
+### The blast radius is asymmetric
+
+- A **remote** on the wrong version breaks only itself. The shell and every other
+  remote keep working, so a bad remote deploy stays survivable.
+- The **shell** on the wrong version breaks every remote at once, because then
+  every remote differs from the host. The host's Angular version is a single
+  point of failure for the whole federation.
 
 ### What this means in practice
 
@@ -105,18 +114,21 @@ Independent per team:
 
 - application code, components, styles, internal routes
 - their own non-shared libraries
+- the federation plugin version
 - release cadence and deploy timing
 - their own CI pipeline and test suite
 
-Not independent, must move in lockstep across all apps:
+Must be the identical installed version in every app:
 
 - `@angular/core` and every other Angular package
 - `@mfe-demo/platform`
 - anything else declared `singleton: true`
 
-An Angular upgrade is a coordinated release of all three apps. That does not
-remove the value of micro frontends here, but it has to be planned for: it is the
-largest recurring cost of this architecture, and it recurs every Angular release.
+An Angular upgrade is a coordinated release of all three apps, and no
+configuration setting removes that. The upgrades are not equally risky though: a
+remote that gets it wrong takes out its own section, while the shell that gets it
+wrong takes out all of them, so the shell's upgrade is the one that needs a
+rehearsal and a rollback path.
 
 ---
 
@@ -198,6 +210,18 @@ schedule, this approach does not deliver that, and no configuration change in
 Native Federation makes it deliver that. The remaining options are separate pages
 per team, or iframes, each with its own costs.
 
+The lockstep is narrower than it first looks, which makes it easier to live with:
+it applies to the installed version of Angular and of anything else declared
+`singleton: true`, and to nothing else. Teams keep their own code, their own
+libraries, their own pipeline, their own release timing, and even their own
+version of the federation plugin. A remote that gets the Angular version wrong
+takes out only its own section.
+
+The one place that needs real process is the shell. Its Angular version decides
+what every remote must match, so its upgrade breaks every remote at once if it
+lands alone. That release needs all three apps staged together, a rehearsal, and
+a rollback path.
+
 The other gaps above are ordinary engineering work with known solutions. The
-version lockstep is the one architectural constraint that has to be accepted or
-designed around before committing.
+Angular version lockstep is the one architectural constraint that has to be
+accepted or designed around before committing.

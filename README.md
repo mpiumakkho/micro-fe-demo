@@ -15,7 +15,7 @@ The answers, with the measurements behind them, are in
 | Question | Answer |
 | --- | --- |
 | Independent deploy | Yes, verified by rebuilding one remote and comparing build ids |
-| Team autonomy | Partly. Application code yes; the Angular version must move in lockstep across all apps |
+| Team autonomy | Partly. Code, libraries, pipeline and release timing yes; the installed Angular version must be identical in every app |
 | Production ready | Conditionally, if a coordinated Angular upgrade is acceptable |
 
 ## Layout
@@ -83,6 +83,9 @@ and will not install on Node 20.19.x.
 | `@angular-architects/native-federation` | 21.2.5 |
 | Node | 20.19.6 |
 
-All three apps must install the **same** `@angular/core` build. A difference of
-one minor version loads Angular twice and every remote stops rendering; the
-measurements are in [docs/findings.md](docs/findings.md#2-can-the-teams-move-independently).
+All three apps must install the **same** `@angular/core` build. Federation
+deduplicates a shared package by its exact version string, so an app on a
+different build loads its own copy of Angular and its dependency injection stops
+working. A mismatched remote breaks only itself; a mismatched shell breaks every
+remote at once. Measurements are in
+[docs/findings.md](docs/findings.md#2-can-the-teams-move-independently).

@@ -1,0 +1,50 @@
+<section class="catalog">
+  <header>
+    <h2>Catalog</h2>
+    <p class="served-by">
+      Served by <code>mfe-catalog</code> &middot; signed in as
+      <strong>{{ user()?.displayName ?? 'nobody' }}</strong> &middot; cart holds
+      {{ cartCount() }} item(s)
+    </p>
+  </header>
+
+  @if (loading()) {
+    <p class="muted">Loading products...</p>
+  } @else if (error(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Product</th>
+          <th>Category</th>
+          <th class="num">Unit price</th>
+          <th class="num">In stock</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (product of products(); track product.id) {
+          <tr>
+            <td class="mono">
+              <a [routerLink]="[product.id]">{{ product.id }}</a>
+            </td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.category }}</td>
+            <td class="num">{{ product.unitPrice | number: '1.2-2' }}</td>
+            <td class="num">{{ product.inStock }}</td>
+            <td class="num">
+              <button type="button" (click)="addToCart(product)">Add to cart</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <p class="muted">
+      Adding to the cart writes to the shared platform instance. The shell header and the orders
+      remote both read that same instance - none of the three imports the others.
+    </p>
+  }
+</section>

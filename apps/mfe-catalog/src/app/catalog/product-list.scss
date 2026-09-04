@@ -1,0 +1,71 @@
+/**
+ * Component styles only.
+ *
+ * This remote's global styles.scss is NOT loaded when it runs inside the shell,
+ * so anything global is referenced as a custom property with a fallback that
+ * keeps standalone mode readable.
+ */
+.catalog {
+  background: var(--mfe-surface, #fff);
+  border: 1px solid var(--mfe-border, #d9dee5);
+  border-radius: var(--mfe-radius, 6px);
+  padding: 20px;
+}
+
+header {
+  margin-bottom: 14px;
+}
+
+h2 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+}
+
+.served-by {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--mfe-text-muted, #5f6b7a);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--mfe-border, #d9dee5);
+}
+
+th {
+  color: var(--mfe-text-muted, #5f6b7a);
+  font-weight: 600;
+}
+
+.num {
+  text-align: right;
+}
+
+.mono {
+  font-family: var(--mfe-mono, monospace);
+  font-size: 0.82rem;
+}
+
+button {
+  padding: 4px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.muted {
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  color: var(--mfe-text-muted, #5f6b7a);
+}
+
+.error {
+  color: var(--mfe-danger, #b3261e);
+}

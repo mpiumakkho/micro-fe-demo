@@ -1,0 +1,34 @@
+<section class="detail">
+  <p><a routerLink="..">&larr; Back to catalog</a></p>
+
+  @if (loading()) {
+    <p class="muted">Loading...</p>
+  } @else if (product(); as item) {
+    <h2>{{ item.name }}</h2>
+    <dl>
+      <dt>SKU</dt>
+      <dd class="mono">{{ item.id }}</dd>
+      <dt>Category</dt>
+      <dd>{{ item.category }}</dd>
+      <dt>Unit price</dt>
+      <dd>{{ item.unitPrice | number: '1.2-2' }}</dd>
+      <dt>In stock</dt>
+      <dd>{{ item.inStock }}</dd>
+    </dl>
+
+    <div class="actions">
+      <label>
+        <span>Quantity</span>
+        <input type="number" min="1" [value]="quantity()" (input)="setQuantity($event)" />
+      </label>
+      <button type="button" (click)="addToCart(item)">Add to cart</button>
+    </div>
+
+    <p class="muted">
+      This page lives inside <code>mfe-catalog</code>. The shell does not know this route exists; it
+      only mounted the remote's route table under a prefix.
+    </p>
+  } @else {
+    <p class="error" role="alert">No product with that SKU.</p>
+  }
+</section>

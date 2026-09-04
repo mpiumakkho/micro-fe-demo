@@ -1,0 +1,81 @@
+<section class="orders">
+  <header>
+    <h2>Orders</h2>
+    <p class="served-by">
+      Served by <code>mfe-orders</code> &middot; signed in as
+      <strong>{{ user()?.displayName ?? 'nobody' }}</strong>
+    </p>
+  </header>
+
+  <div class="cart">
+    <h3>Cart handed over from the catalog</h3>
+    @if (cartItems().length === 0) {
+      <p class="muted">
+        Empty. Open the catalog, add a product, then come back - the two remotes never call each
+        other, they share one platform instance.
+      </p>
+    } @else {
+      <ul>
+        @for (item of cartItems(); track item.productId) {
+          <li>
+            <span>{{ item.name }}</span>
+            <span class="mono">x{{ item.quantity }}</span>
+            <span class="num">{{ item.unitPrice * item.quantity | number: '1.2-2' }}</span>
+          </li>
+        }
+      </ul>
+      <p class="total">Total {{ cartTotal() | number: '1.2-2' }}</p>
+    }
+
+    <button type="button" [disabled]="!canPlace()" (click)="placeFromCart()">
+      Place order from cart
+    </button>
+
+    @if (placed(); as orderId) {
+      <p class="ok" role="status">Created {{ orderId }} and emptied the cart.</p>
+    }
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Order</th>
+        <th>Placed by</th>
+        <th>Placed at</th>
+        <th>Status</th>
+        <th class="num">Total</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (order of orders(); track order.id) {
+        <tr>
+          <td class="mono"><a [routerLink]="[order.id]">{{ order.id }}</a></td>
+          <td>{{ order.placedBy }}</td>
+          <td class="mono">{{ order.placedAt | date: 'yyyy-MM-dd HH:mm' }}</td>
+          <td>
+            <span class="status" [class.approved]="order.status === 'approved'">
+              {{ order.status }}
+            </span>
+          </td>
+          <td class="num">{{ order.total | number: '1.2-2' }}</td>
+          <td class="num">
+            @if (order.status === 'pending' && canApprove()) {
+              <button type="button" (click)="approve(order.id)">Approve</button>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  @if (!canApprove()) {
+    <p class="muted">
+      Approve is hidden because this account lacks <code>orders.approve</code>. The role comes from
+      the session the shell owns, not from anything this remote stores.
+    </p>
+  }
+</section>

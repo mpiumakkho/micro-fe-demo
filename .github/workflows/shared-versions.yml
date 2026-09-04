@@ -1,0 +1,21 @@
+name: shared-versions
+
+# Runs on everything, with no path filter and no install. It is the one
+# invariant that no single app's pipeline can protect: an app is free to bump
+# its own dependency, and the damage only shows up when the apps are composed in
+# a browser. Two seconds here replaces a runtime failure nobody can reproduce
+# locally.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: node scripts/check-shared-versions.mjs

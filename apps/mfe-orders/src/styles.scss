@@ -1,0 +1,8 @@
+/* Standalone mode only. When this remote runs inside the shell, index.html is
+   the shell's and this stylesheet is never loaded. */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #f6f7f9;
+}

@@ -49,16 +49,25 @@ for (const [name, url] of Object.entries(remotes)) {
     problems.push(`${name}: value is not a string`);
     continue;
   }
-  // A relative or misspelled url fails at runtime in the browser, where it is
-  // far more expensive to notice than here.
-  let parsed;
-  try {
-    parsed = new URL(url);
-  } catch {
-    problems.push(`${name}: "${url}" is not an absolute url`);
-    continue;
+  // Two shapes are valid, and both are resolved by the browser at load time:
+  //   - an absolute url, for remotes on their own origin
+  //   - a root-relative path, for the single-origin layout, which must not
+  //     hardcode a host or the manifest stops being portable between
+  //     environments
+  // Anything else (a bare relative path, a typo) fails in the browser, where it
+  // is far more expensive to notice than here.
+  let pathname;
+  if (url.startsWith('/')) {
+    pathname = url;
+  } else {
+    try {
+      pathname = new URL(url).pathname;
+    } catch {
+      problems.push(`${name}: "${url}" is neither an absolute url nor a root-relative path`);
+      continue;
+    }
   }
-  if (!parsed.pathname.endsWith('/remoteEntry.json')) {
+  if (!pathname.endsWith('/remoteEntry.json')) {
     problems.push(`${name}: "${url}" does not point at a remoteEntry.json`);
   }
 }

@@ -1,0 +1,113 @@
+.login {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(280px, 1fr);
+  gap: var(--mfe-gap);
+  align-items: start;
+}
+
+.panel {
+  background: var(--mfe-surface);
+  border: 1px solid var(--mfe-border);
+  border-radius: var(--mfe-radius);
+  padding: 20px;
+}
+
+h2,
+h3 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+}
+
+form {
+  display: grid;
+  gap: 12px;
+}
+
+label {
+  display: grid;
+  gap: 4px;
+}
+
+label span {
+  font-size: 0.85rem;
+  color: var(--mfe-text-muted);
+}
+
+input {
+  padding: 7px 9px;
+  border: 1px solid var(--mfe-border);
+  border-radius: 4px;
+  font: inherit;
+}
+
+button[type='submit'] {
+  justify-self: start;
+  padding: 7px 18px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--mfe-accent);
+  color: var(--mfe-accent-contrast);
+  font: inherit;
+  cursor: pointer;
+}
+
+button[type='submit']:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.error {
+  margin: 0;
+  color: var(--mfe-danger);
+  font-size: 0.9rem;
+}
+
+.signed-in {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+}
+
+.link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--mfe-accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.hint {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: var(--mfe-text-muted);
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--mfe-border);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+
+.roles {
+  color: var(--mfe-text-muted);
+  font-size: 0.82rem;
+}
+
+li button {
+  padding: 5px 12px;
+  font: inherit;
+  cursor: pointer;
+}

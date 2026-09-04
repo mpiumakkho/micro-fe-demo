@@ -1,0 +1,61 @@
+<section class="login">
+  <div class="panel">
+    <h2>Sign in</h2>
+
+    @if (session(); as active) {
+      <p class="signed-in">
+        Already signed in as <strong>{{ active.user.displayName }}</strong>.
+        <button type="button" class="link" (click)="signOut()">Sign out</button>
+      </p>
+    }
+
+    <form (submit)="submit($event)">
+      <label>
+        <span>Username</span>
+        <input
+          name="username"
+          autocomplete="username"
+          [value]="username()"
+          (input)="username.set(value($event))"
+        />
+      </label>
+
+      <label>
+        <span>Password</span>
+        <input
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          [value]="password()"
+          (input)="password.set(value($event))"
+        />
+      </label>
+
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+
+      <button type="submit" [disabled]="pending()">
+        {{ pending() ? 'Signing in...' : 'Sign in' }}
+      </button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h3>Demo accounts</h3>
+    <p class="hint">
+      The two accounts differ by role, which changes which remotes the shell is allowed to load.
+    </p>
+    <ul>
+      @for (account of accounts; track account.username) {
+        <li>
+          <div>
+            <strong>{{ account.displayName }}</strong>
+            <div class="roles"><code>{{ account.roles.join(', ') }}</code></div>
+          </div>
+          <button type="button" (click)="fill(account)">Use</button>
+        </li>
+      }
+    </ul>
+  </div>
+</section>

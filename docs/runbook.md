@@ -86,6 +86,48 @@ npm run inspect:imports
 Every scope pointing at the same file means one instance. A scope pointing at
 another origin means a second copy and broken dependency injection.
 
+## Pointing the shell at different origins
+
+The manifest is a deployment artefact, not build output. The same shell build
+serves every environment:
+
+```bash
+node deploy/apply-manifest.mjs deploy/manifests/local.json
+node deploy/apply-manifest.mjs deploy/manifests/example-production.json
+```
+
+The script refuses a manifest with relative urls or one that does not point at a
+`remoteEntry.json`, and leaves the existing file untouched when it refuses.
+
+## Serving with a Content-Security-Policy
+
+Any origins listed after the port are added to `script-src` and `connect-src`,
+and a policy is sent:
+
+```bash
+node deploy/serve-static.mjs apps/shell/dist/shell/browser 4400   http://localhost:4201 http://localhost:4202
+```
+
+The policy this produces is the measured minimum for this stack; see
+`docs/findings.md`. `MFE_CSP_SCRIPT_EXTRA` adds further `script-src` tokens if
+you want to re-run the experiment.
+
+## Measuring what the composed page actually downloads
+
+```bash
+npm run measure:payload
+```
+
+Reports transferred bytes by origin and the ten largest files, which is the
+number a bundle budget belongs on. `e2e/tests/payload.spec.ts` enforces it.
+
+## Continuous integration
+
+`.github/workflows/` has one pipeline per deployable app, filtered to its own
+paths, plus an `e2e` pipeline with no filter because composition can break from
+a change in any app. Each app pipeline also triggers on `packages/platform/**`,
+which is the shared singleton coupling made visible rather than hidden.
+
 ## Reproducing the independent-deploy proof by hand
 
 ```bash

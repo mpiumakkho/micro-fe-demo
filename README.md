@@ -28,8 +28,11 @@ apps/
 packages/
   platform/       @mfe-demo/platform - shared auth, cart, build registry
 deploy/
-  serve-static.mjs  static server with the cache headers this architecture needs
-e2e/              Playwright proofs, one spec per question
+  serve-static.mjs   static server with the cache headers and CSP this needs
+  apply-manifest.mjs points a built shell at another environment's origins
+  manifests/         one manifest per environment
+e2e/              Playwright proofs, one spec per property
+.github/workflows/ one pipeline per deployable app, filtered to its own paths
 docs/             findings, decisions, runbook
 ```
 
@@ -63,13 +66,15 @@ up as one instance or several.
 ## Verifying the answers
 
 ```bash
-npm run test:unit        # platform + shell
-npm run test:e2e         # the three questions, as tests
-npm run inspect:imports  # is Angular loaded once or twice?
+npm run test:unit         # platform, shell, and both remotes
+npm run test:e2e          # the three questions, as tests
+npm run inspect:imports   # is Angular loaded once or twice?
+npm run measure:payload   # what the composed page actually downloads
 ```
 
 `npm run test:e2e` needs the three builds present in `dist/`; it starts the
-static servers itself.
+static origins itself, including one with a Content-Security-Policy and one that
+serves the catalog from a second host so relocation can be proved.
 
 ## Versions
 

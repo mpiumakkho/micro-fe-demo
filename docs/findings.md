@@ -35,6 +35,13 @@ The cache rules are the part most likely to be got wrong on a real CDN. A
 `remoteEntry.json` served with a long max-age turns an independent deploy into a
 deploy that appears to do nothing.
 
+Deploying a new build of a remote is only half of it. `e2e/tests/relocate.spec.ts`
+covers the other half: the same catalog build is served from a second origin,
+`deploy/apply-manifest.mjs` writes a manifest pointing there, and the shell picks
+it up on the next load with the same build id it already had. Nothing is
+compiled. That is what makes one shell build usable across environments, and
+what lets a remote change host without a coordinated release.
+
 ---
 
 ## 2. Can the teams move independently?
@@ -147,6 +154,10 @@ not reasons to stop.
 | An unreachable remote does not take the shell down | `e2e/tests/isolation.spec.ts` |
 | An unauthorised user never downloads the remote's bundle | `e2e/tests/isolation.spec.ts` |
 | The shared package stays a single instance | `PlatformStatus` panel, `npm run inspect:imports` |
+| A remote can be moved to another origin with no rebuild | `e2e/tests/relocate.spec.ts` |
+| The composed page works under a Content-Security-Policy | `e2e/tests/csp.spec.ts` |
+| A remote costs its own code, not a second framework | `e2e/tests/payload.spec.ts` |
+| A failure is attributed to the remote that caused it | `e2e/tests/isolation.spec.ts` |
 
 ### Problems found and fixed while building this
 
@@ -176,6 +187,51 @@ memory-only, so every hard navigation and every deep link signed the user out.
 (`packages/platform/src/auth-store.ts`). In a real system the token belongs in an
 http-only cookie and this would be cache, not the source of truth.
 
+**A strict CSP stops the app from booting.** Measured by serving the shell with
+a policy and tightening it until the page worked. The minimum this stack needs:
+
+```
+script-src 'self' blob: 'unsafe-inline' <each remote origin>
+```
+
+- `blob:` is required because es-module-shims runs shimmed modules through
+  `URL.createObjectURL`.
+- `'unsafe-inline'` is required because the federation runtime injects the
+  computed import map as an inline script and sets no nonce on it.
+  es-module-shims accepts an `esmsInitOptions.nonce`, but nothing in
+  `@softarc/native-federation-runtime` passes one, so a nonce-based policy is
+  not reachable without changing that package.
+- `'unsafe-eval'` is **not** needed. Adding it changed nothing.
+- Angular's `inlineCritical` optimisation emits
+  `<link ... onload="this.media='all'">`, an inline event handler that a strict
+  policy blocks. It is turned off in all three apps; the cost is a small first
+  paint regression, the benefit is not needing `'unsafe-inline'` for that too.
+
+`'unsafe-inline'` in `script-src` is a real weakening and it is forced by the
+tooling, not chosen. It is the strongest argument in this report for treating a
+federation host as a higher risk surface than an ordinary Angular app.
+
+**An unattributed error names no owner.** A runtime failure inside a remote used
+to reach the console as an anonymous stack trace. The shell now derives
+origin-to-remote from the import map federation injected and tags errors with
+the remote they came from, shown in the evidence panel and ready to forward to a
+monitoring backend. Writing the unit test for it found a defect in the first
+implementation: splitting a root import key on `/` turns `@angular/core` into a
+remote called `@angular` mapped to the shell's own origin, which would have
+misattributed every shell error. The registry keys off the import map scopes
+instead.
+
+**The composed page is 858 kB uncompressed**, of which the remotes contribute
+16 kB and 4 kB. Everything else is the framework, downloaded once from the
+shell's origin, which is the sharing working as intended. `deploy/serve-static.mjs`
+sends no compression, so a real CDN transfers roughly a quarter of that.
+
+`@angular/common/http` is in that total at about 47 kB even though nothing here
+uses `HttpClient`. Adding it to the federation `skip` list looks like free
+savings and is not: `@angular/platform-browser` imports it, and the app fails to
+boot with `Unable to resolve specifier '@angular/common/http'`. The comment in
+each `federation.config.js` records this so nobody tries it again.
+
 ### Constraints a remote team has to respect
 
 - A remote's global `styles.scss` is **not** loaded inside the shell. Only
@@ -191,16 +247,23 @@ http-only cookie and this would be cache, not the source of truth.
 
 ### Not covered, and the risk of each
 
+Left out on purpose, because the demo was scoped to a mock backend and two
+remotes:
+
 | Gap | Risk |
 | --- | --- |
-| No backend; auth, catalog and orders are in-memory mocks | Token refresh, expiry handling and 401 propagation across remotes are untested |
-| Cart state is memory-only and lost on reload | Deliberate here, but a real cart needs server-side persistence |
-| No Content-Security-Policy | Federation loads script from other origins; CSP has to allow them explicitly and was not exercised |
-| No SSR | Native Federation supports it; nothing here was tested with it |
-| No per-remote error reporting | A remote's runtime error only reaches the browser console; production needs to know which remote failed |
-| No bundle budget across the composed page | Each app is measured alone; nobody measures what the user actually downloads |
+| No backend; auth, catalog and orders are in-memory mocks | Token refresh, expiry handling and 401 propagation across remotes are untested. This is the largest remaining unknown |
+| Cart state is memory-only and lost on reload | Fine for a demo; a real cart needs server-side persistence |
 | Only two remotes | Communication is one shared store between two consumers. Ownership and contention questions appear at five or ten |
-| `mfe-orders` and `mfe-catalog` have no unit tests | Only the shell and `packages/platform` are covered |
+
+Not attempted:
+
+| Gap | Risk |
+| --- | --- |
+| No SSR | Native Federation supports it, and the shell's inline import map makes hydration worth checking before committing to it |
+| No CDN in front of the origins | The cache rules are verified against `deploy/serve-static.mjs`, not against a real CDN's defaults, which are usually wrong for `remoteEntry.json` |
+| CI is defined but only exercised on this repo's own pushes | The per-app pipelines in `.github/workflows/` express the independence claim; they have not been run against a deploy target |
+| Error attribution is reported, not shipped anywhere | `RemoteAwareErrorHandler` tags the remote and writes to the evidence panel. Forwarding to a monitoring backend is a one-line change that nobody has made |
 
 ### Recommendation
 

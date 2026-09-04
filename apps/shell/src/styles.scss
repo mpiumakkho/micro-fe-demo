@@ -1,0 +1,50 @@
+/**
+ * Global tokens and base styles for the shell.
+ *
+ * A remote's own styles.scss is NOT loaded when the remote runs inside the
+ * shell - federation loads the exposed module, not the remote's index.html.
+ * So anything a remote needs to look right inside the shell has to come from
+ * either its own component styles or from these custom properties.
+ */
+:root {
+  --mfe-bg: #f6f7f9;
+  --mfe-surface: #ffffff;
+  --mfe-border: #d9dee5;
+  --mfe-text: #1c2430;
+  --mfe-text-muted: #5f6b7a;
+  --mfe-accent: #1f5fbf;
+  --mfe-accent-contrast: #ffffff;
+  --mfe-danger: #b3261e;
+  --mfe-ok: #1e7a45;
+  --mfe-radius: 6px;
+  --mfe-gap: 16px;
+  --mfe-font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", sans-serif;
+  --mfe-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--mfe-bg);
+  color: var(--mfe-text);
+  font-family: var(--mfe-font);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+a {
+  color: var(--mfe-accent);
+}
+
+code {
+  font-family: var(--mfe-mono);
+  font-size: 0.92em;
+}
